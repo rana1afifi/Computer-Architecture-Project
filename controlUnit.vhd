@@ -131,20 +131,19 @@ begin
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
 
 	end if;
-	if(falling_edge(clk)) then
-		aluOpCode<=aluOp;
-		ccrControlSig<=ccrControl;
-		ccrMode<=ccrM;
-		pop<=popSig;
-		wbValueToPass<=wbPass;
-		wbDest<=wbDst;
-		memRead<=memR;
-		memWrite<=memW;
-		spSignal<=spSig;
-		retSignal<=retSig;
-		rtiSignal<=rtiSig;
-		intSignal<=intSig;
-		immSignal<=immSig;
-	end if;
 	end process;
+	aluOpCode<=aluOp;
+	ccrControlSig<=ccrControl;
+	ccrMode<=ccrM;
+	pop<=popSig;
+	wbValueToPass<=wbPass;
+	wbDest<=wbDst;
+	memRead<=memR;
+	memWrite<=memW;
+	spSignal<=spSig;
+	retSignal<=retSig;
+	rtiSignal<=rtiSig;
+	intSignal<=intSig;
+	immSignal<=immSig;
+
 end controlUnitImp;
