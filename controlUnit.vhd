@@ -4,10 +4,13 @@ Use ieee.std_logic_1164.all;
 Entity controlUnit is
 port( 	clk : in std_logic;
 	opCode: in std_logic_vector(4 downto 0);
-	aluOpCode : out std_logic_vector(3 downto 0);
-	ccrControlSig,wbValueToPass,wbDest,memValueToPass : out std_logic_vector(1 downto 0);
-	ccrMode,pop,memRead,memWrite,spSignal,retSignal,rtiSignal,intSignal,immSignal : out std_logic);
+	jmp : out std_logic;
+	memValueToPass,jmpType : out std_logic_vector(1 downto 0);
+	controlSignals : out std_logic_vector(18 downto 0));
 end controlUnit;
+	
+-- 1bit signals: ccrMode,pop,memRead,memWrite,spSignal,retSignal,rtiSignal,intSignal,immSignal
+-- ID/EX Buffer : aluOpCode(4) & ccrControlSig(2) & wbValueToPass(2) & wbDest(2) & 1bit signals
 
 Architecture controlUnitImp of controlUnit is
 signal ccrM,popSig,memR,memW,spSig,retSig,rtiSig,intSig,immSig : std_logic;
@@ -17,6 +20,7 @@ begin
 	Process (clk)
 	begin
 	if(rising_edge(clk)) then
+		jmpType<=opCode(1 downto 0);
 		if opCode(4)='0' then
 			if opCode(3 downto 2)="11" then
 				aluOp<= "0000";
@@ -46,8 +50,14 @@ begin
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
 		if opCode (4 downto 2) = "110" then
 			ccrControl<=opCode(1 downto 0);
+			jmp<='1';
 		else 
 			ccrControl<="00";
+			if opCode = "10011" then
+				jmp<='1';
+			else 
+				jmp<='0';
+			end if;
 		end if;
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
 		if opCode (4 downto 2) = "110" or opCode = "11100" then
@@ -87,16 +97,10 @@ begin
 			memW<='0';
 		end if;
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
-		if opCode = "10010" then		
-			memValueToPass(1)<='1';
+		if opCode(4 downto 2) = "100" and opCode(0) /= opCode(1) then		
+			memValueToPass<=opCode(1 downto 0);
 		else
-			memValueToPass(1)<='0';
-		end if;
--- /////////////////////////////////////////////////////////////////////////////////////////////////////
-		if opCode = "10001" then		
-			memValueToPass(0)<='1';
-		else
-			memValueToPass(0)<='0';
+			memValueToPass<="00";
 		end if;
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
 		if (opCode(4 downto 2) = "100" and opCode(1 downto 0) /= "11") or opCode(4 downto 2) = "011" then
@@ -111,7 +115,7 @@ begin
 			retSig<='0';
 		end if;
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
-		if opCode="01101" then
+		if opCode="01100" then
 			rtiSig<='1';
 		else
 			rtiSig<='0';
@@ -132,18 +136,8 @@ begin
 
 	end if;
 	end process;
-	aluOpCode<=aluOp;
-	ccrControlSig<=ccrControl;
-	ccrMode<=ccrM;
-	pop<=popSig;
-	wbValueToPass<=wbPass;
-	wbDest<=wbDst;
-	memRead<=memR;
-	memWrite<=memW;
-	spSignal<=spSig;
-	retSignal<=retSig;
-	rtiSignal<=rtiSig;
-	intSignal<=intSig;
-	immSignal<=immSig;
-
+	controlSignals<= aluOp & ccrControl & wbPass & wbDst & ccrM & popSig & memR & memW & spSig & retSig & rtiSig & intSig &immSig;
+	
+-- 1bit signals: ccrMode,pop,memRead,memWrite,spSignal,retSignal,rtiSignal,intSignal,immSignal
+-- ID/EX Buffer : aluOpCode(4) & ccrControlSig(2) & wbValueToPass(2) & wbDest(2) & 1bit signals
 end controlUnitImp;
