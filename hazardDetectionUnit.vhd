@@ -5,7 +5,7 @@ Entity hazardDetectionUnit is
 port( 	clk,memRead : in std_logic;
 	regLoaded,rSrc,rDst : in std_logic_vector(2 downto 0);
 	instOpCode : in std_logic_vector(4 downto 0);
-	stalePipe : out std_logic);
+	stallPipe : out std_logic);
 end hazardDetectionUnit;
 -- memRead,regLoaded from IDEXBuff/rSrc,rDst,instOp from IFIDBuff
 
@@ -25,12 +25,12 @@ begin
 			or ((instOpCode="11101" or instOpCode(4 downto 1)="0101") and rSrc=regLoaded)
 			or (instOpCode="10000" and rDst=regLoaded) then
 
-				stalePipe<='1';
+				stallPipe<='1';
 			else
-				stalePipe<='0';
+				stallPipe<='0';
 			end if;
 		else 
-			stalePipe<='0';
+			stallPipe<='0';
 		end if;
 	end if;
 	end process;

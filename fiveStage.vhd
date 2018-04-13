@@ -4,7 +4,7 @@ Use ieee.std_logic_1164.all;
 Entity fiveStage is
 port( 	clk,reset : in std_logic;
 	instruction: in std_logic_vector(10 downto 0);
-	stalePipe,jmpSignal : out std_logic;
+	stallPipe,jmpSignal : out std_logic;
 	memValueToPass : out std_logic_vector(1 downto 0);
 	controlSig : out std_logic_vector(18 downto 0));
 end fiveStage;
@@ -33,12 +33,12 @@ component hazardDetectionUnit is
 port( 	clk,memRead : in std_logic;
 	regLoaded,rSrc,rDst : in std_logic_vector(2 downto 0);
 	instOpCode : in std_logic_vector(4 downto 0);
-	stalePipe : out std_logic);
+	stallPipe : out std_logic);
 end component;
 -- memRead,regLoaded from IDEXBuff/rSrc,rDst,instOp from IFIDBuff
 
 component jmpUnit is
-port( 	clk,jmp,stalePipe : in std_logic;
+port( 	clk,jmp,stallPipe : in std_logic;
 	jmpType : in std_logic_vector(1 downto 0);
 	ccr : in std_logic_vector(2 downto 0);
 	jmpSignal : out std_logic);
@@ -47,16 +47,16 @@ end component;
 signal totalin,totalout : std_logic_vector(24 downto 0); 
 signal instout: std_logic_vector(10 downto 0); 
 signal JMPTYPE: std_logic_vector(1 downto 0); 
-signal stale,JMP: std_logic;
+signal stall,JMP: std_logic;
 begin
 
 IFIDBuff : stageBuffer generic map (n => 11) port map(clk,reset,instruction,instout);
 control : controlUnit port map(clk,instout(10 downto 6),JMP,memValueToPass,JMPTYPE,totalin(24 downto 6));
-HDU : hazardDetectionUnit port map (clk,totalout(12),totalout(5 downto 3),instout(5 downto 3),instout(2 downto 0),instout(10 downto 6),stale);
-JMPU : jmpUnit port map (clk,JMP,stale,JMPTYPE,"101",jmpSignal);
+HDU : hazardDetectionUnit port map (clk,totalout(12),totalout(5 downto 3),instout(5 downto 3),instout(2 downto 0),instout(10 downto 6),stall);
+JMPU : jmpUnit port map (clk,JMP,stall,JMPTYPE,"101",jmpSignal);
 IDEXBuff : stageBuffer generic map (n => 25) port map(clk,reset,totalin,totalout);
 totalin(5 downto 0)<=instout(5 downto 0);
 
 controlSig<= totalout(24 downto 6);
-stalePipe<=stale;
+stallPipe<=stall;
 end fiveStageImp;
