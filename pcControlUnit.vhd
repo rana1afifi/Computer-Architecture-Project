@@ -7,7 +7,7 @@ port(  clk : in std_logic;
        wbValue: in std_logic_vector(15 downto 0); -- can either hold PC value from memory or Rdest in case of FWD
        rdest:in std_logic_vector(15 downto 0); -- rDest of jmp signal  
        -- for forwarding 
-       aluResultExMem : in  std_logic_vector(15 downto 0);
+       aluResult : in  std_logic_vector(15 downto 0);
        fwdSignalType: in std_logic_vector (1 downto 0); -- 11 for wbValue , 10 for aluResult
     
        jmpSignal , intSignal , resetSignal , stallSignal:in std_logic;
@@ -37,7 +37,7 @@ begin
                 pcVar:=wbValue; 
                 
               elsif (fwdSignalType="10") then 
-                 pcVar:=aluResultExMem; 
+                 pcVar:=aluResult; 
                  
               elsif( fwdSignalType(1)='0') then 
                  pcVar:=rdest; 
