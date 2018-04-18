@@ -4,10 +4,11 @@ use ieee.numeric_std.all;
 
 
 entity RegisterFile is
-  port( Wb,clk,RST,spSignal:in std_logic;
-	memValToPass:in std_logic_vector(1 downto 0);
+  port( clk,RST,spSignal:in std_logic;
+	memValToPass,wbDest:in std_logic_vector(1 downto 0);
 	WbAddress,rDst,rSrc:in std_logic_vector(2 downto 0);
-	WbValue,pcValue:in std_logic_vector(15 downto 0);
+	WbValue:in std_logic_vector(15 downto 0);
+        pcValue:in std_logic_vector(9 downto 0);
 	spValue:in std_logic_vector(15 downto 0);
 	immValueEa:in std_logic_vector(15 downto 0);
         rSrcVal,rDstVal,immValue:out std_logic_vector(15 downto 0);
@@ -30,14 +31,14 @@ signal e: std_logic_vector(6 downto 0);
 	loop1: for i in 0 to 5 generate
 		fx: my_nDFF generic map (n => 16) port map(clk,RST,e(i),WbValue,readValue(i));
 	end generate;
-	sp: my_nDFF generic map (n => 16) port map(clk,RST,spEn,spWrite,readValue(6));
+	sp: my_nDFF generic map (n => 16) port map(clk,'0',spEn,spWrite,readValue(6));
 	immValue<=immValueEa;
 	spEn<=e(6) or spSignal;
 	spWrite<=spValue when spSignal='1'
 	else WbValue;
 	wbRdst<=rDst;
-	rDstVal<=pcValue when memValToPass="01"
-	else std_logic_vector(unsigned(pcValue)+2) when memValToPass="10"
+	rDstVal<="000000"&pcValue when memValToPass="01"
+	else "000000"&std_logic_vector(unsigned(pcValue)+1) when memValToPass="10"
 	else rDstValue;
 	with rDst select
 		       rDstValue<=readValue(0) when "000",
@@ -47,7 +48,7 @@ signal e: std_logic_vector(6 downto 0);
 				  readValue(4) when "100",
 			 	  readValue(5) when "101",
 			 	  readValue(6) when "110",
-			  	  pcValue when others;
+			  	  "000000"&pcValue when others;
 		
 
 	with rSrc select
@@ -58,11 +59,11 @@ signal e: std_logic_vector(6 downto 0);
 				  readValue(4) when "100",
 			 	  readValue(5) when "101",
 			 	  readValue(6) when "110",
-			  	  pcValue when others;
+			  	  "000000"&pcValue when others;
 		
-	process(Wb,WbAddress)
+	process(clk)
 	begin
-		if Wb='1' then
+		if wbDest="01" then
 			if WbAddress="000" then
 			e<="0000001";
 			elsif WbAddress="001" then
@@ -82,9 +83,7 @@ signal e: std_logic_vector(6 downto 0);
 			end if;
 		else 
 			e<="0000000";
-		end if;
-	
-			
+		end if;		
 	
 	end process;
 end Architecture;
