@@ -118,7 +118,7 @@ begin
 	--wbValueToPass(2),wbDest(2),pop,memRead,memWrite,spSignal,retSignal,rtiSignal,
 	--immValue&wbRdst,aluResult,ccrwb
 	EXMEMBuff:stageBuffer generic map (n => 46) port map(clk,reset,exMem,toMem);
-
+----- mem write , clck , pop , spSignal , Write Value , ALU Result , inPort , WB Value to pass 2 , WB Value 16
 	mem:dataMemory port map(toMem(39),clk,toMem(41),toMem(38),toMem(35 downto 20),
 				toMem(16 downto 1),inPort,toMem(45 downto 44),wbval);
 	--wbval,wbDest(2),wbRdst,aluResult(Spval),spSignal,retSignal,rtiSignal,ccrWb
