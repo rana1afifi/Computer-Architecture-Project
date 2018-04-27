@@ -21,11 +21,13 @@ Architecture ccrUnitImpl of ccrUnit is
         -- OVERFLOW  CARRY  NEGATIVE  ZERO 
       variable ccrRegister : std_logic_vector( 3 downto 0) ;  
       begin 
-        if(falling_edge(clk)) then 
-            
-            if (wb='1') then -- Write back from RTI
-                ccrRegister:=wbInput; 
-            elsif(ccrMode='1') then -- Jump Control --00	C = 0  01	N=0	 10	Z=0   11	C = 1
+	if(clk='1') then 
+               if (wb='1') then -- Write back from RTI
+                ccrRegister:=wbInput;
+                end if; 
+
+        elsif(clk='0') then             
+               if(ccrMode='1') then -- Jump Control --00	C = 0  01	N=0	 10	Z=0   11	C = 1
                 case ccrCtrl is 
 
                    when "00" => ccrRegister:=ccrRegister(3) &'0'&ccrRegister(1 downto 0);
@@ -35,13 +37,13 @@ Architecture ccrUnitImpl of ccrUnit is
                    when others => null ; -- doesn't compile without it 
                    
                 end case; 
-           elsif (ccrMode='0') then 
+             elsif (ccrMode='0') then 
               ccrRegister:=aluInput ;
               
            end if ; 
-          ccrOutput<=ccrRegister;
+          
         end if;
-
+	ccrOutput<=ccrRegister;
    	 end process; 
 
 end ccrUnitImpl;

@@ -19,31 +19,30 @@ port(  clk : in std_logic;
 	     wbDestIfId: in std_logic_vector( 1 downto 0); 
 	     rdestIfId: in std_logic_vector (2 downto 0);
 	    -- Ouput
-	     aluFwdSignalForRsrc:out std_logic; -- is there ALU FWD?
 	     aluFwdSignalForRdest:out std_logic; -- is there ALU FWD?
 	     aluFwdSignalTypeForRsrc:out std_logic_vector(1 downto 0); -- 00 for ALU-ALU , 01 for Mem-ALU , 10 for SP Value 
 	     aluFwdSignalTypeForRdest:out std_logic; -- 0 for ALU-ALU , 1 for Mem-ALU
-	     jmpFWD: out std_logic_vector(1 downto 0) -- 11 for wbValue , 10 for aluResult
-	     
+	     jmpFWD: out std_logic_vector(1 downto 0) -- 11 for wbValue , 10 for aluResult  
 	    );
 end forwardingUnit;
 
 
 
 Architecture forwardingUnitImpl of forwardingUnit is 
-
+signal input : std_logic_vector(26 downto 0); 
 begin
-  process(clk) begin 
-    if(rising_edge(clk)) then  
+input <= rsrcIdEx & rdestIdEx & wbDestExMem & rdestExMem& wbDestMemWb&rdestMemWb& spSignalExMem &spSignalMemWb&spSignalIdEx&jmpDest& wbDestIfId &rdestIfId; 
+  process(clk , input) begin 
+    if(clk='1') then  
 -- First assume there's no Forwarding  
-     aluFwdSignalForRsrc<='0'; 
      aluFwdSignalForRdest<='0'; 
+     aluFwdSignalTypeForRsrc<="11";
+     aluFwdSignalTypeForRdest<='0';
      jmpFwd<="00";
 -- Case 1: ALU to ALU FWD   
      if (wbDestExMem="01") then
          if(rsrcIdEx=rdestExMem) then 
             aluFwdSignalTypeForRsrc<="00" ; 
-            aluFwdSignalForRsrc<='1'; 
           end if; 
       
          if(rdestIdEx=rdestExMem) then 
@@ -56,7 +55,6 @@ begin
       if (wbDestMemWb="01") then
           if(rsrcIdEx=rdestMemWb) then 
             aluFwdSignalTypeForRsrc<="01" ; 
-            aluFwdSignalForRsrc<='1'; 
           end if; 
       
           if(rdestIdEx=rdestMemWb) then 
@@ -68,11 +66,9 @@ begin
 -- Case 3: SP Forwarding: ALU to ALU -->FWD to Rsrc ALU Result , MEM to ALU --> FWD To Rsrc SP Value 
         if (spSignalIdEx='1')  then 
           if(spSignalExMem='1') then 
-            aluFwdSignalTypeForRsrc<="00" ; -- ALU Result (if I have both signals , priority to ExMem ) 
-            aluFwdSignalForRsrc<='1'; 
+            aluFwdSignalTypeForRsrc<="00" ; -- ALU Result (if I have both signals , priority to ExMem )  
           elsif (spSignalMemWB='1') then 
             aluFwdSignalTypeForRsrc<="10" ; -- SPvalue 
-            aluFwdSignalForRsrc<='1';
           end if ;
         end if;
     

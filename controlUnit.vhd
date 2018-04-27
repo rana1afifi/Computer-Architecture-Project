@@ -6,7 +6,8 @@ port( 	clk : in std_logic;
 	opCode: in std_logic_vector(4 downto 0);
 	jmp : out std_logic;
 	memValueToPass,jmpType : out std_logic_vector(1 downto 0);
-	controlSignals : out std_logic_vector(18 downto 0));
+	controlSignals : out std_logic_vector(18 downto 0);
+	ccrWb: out std_logic);
 end controlUnit;
 	
 -- 1bit signals: ccrMode,pop,memRead,memWrite,spSignal,retSignal,rtiSignal,intSignal,immSignal
@@ -71,8 +72,11 @@ begin
 			wbPass<="00";
 		else
 			popSig<='0';
+			
 			if opCode (4 downto 2) = "101" then
 				wbPass<=opCode(1 downto 0);
+			elsif opCode="11110" then
+				wbPass<="11";
 			else
 				wbPass<="01";
 			end if;
@@ -117,8 +121,10 @@ begin
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
 		if opCode="01100" then
 			rtiSig<='1';
+			ccrWb<='1';
 		else
 			rtiSig<='0';
+			ccrWb<='0';
 		end if;
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
 		if opCode="10001" then

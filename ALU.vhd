@@ -44,18 +44,18 @@ signal cy,cz,cx:std_logic_vector(3 downto 0);
     OpC: shift port map (aluOp(1 downto 0),Op1,Op2,cin,cy,y);
 
     with fwdSignal(1 downto 0) select
-	Op1<=fromAlu when "01",
-	     fromMem when "10",
-	     spValue when "11",
+	Op1<=fromAlu when "00",
+	     fromMem when "01",
+	     spValue when "10",
 	     rSrc when others;
 
 	Op2<=fromAlu when fwdSignal(3 downto 2)="10"
 	     else fromMem when fwdSignal(3 downto 2)="11"
 	     else immValue when immSignal='1'
 	     else rDst ;
-	process(clk)
+	process(clk,cin)
 	begin
-		if(rising_edge(clk)) then
+		if(clk='1') then
 			case aluOp(3 downto 2)  is 
             			when "00" => aluResult<=z; cout<=cz; 
 				when "01" => aluResult<=x; cout<=cx; 
