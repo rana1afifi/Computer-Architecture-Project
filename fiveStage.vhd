@@ -138,7 +138,7 @@ begin
 	--intSignal,immSignal,rSrcVal&rDstVal&immValue&wbRdst,ccrwb
 	IDEXBuff : stageBuffer generic map (n => 74) port map(clk,reset,idEx,toAlu);
 	ccr:ccrUnit port map(clk,toAlu(60),toWb(0),ccrIn,toWb(28 downto 25),toAlu(66 downto 65),ccrVal);
-	fwdSignal<=aluFwdSignalTypeForRsrc&aluFwdSignalForRdest&aluFwdSignalTypeForRdest;
+	fwdSignal<=aluFwdSignalForRdest&aluFwdSignalTypeForRdest&aluFwdSignalTypeForRsrc;
 	aluEx : ALU port map(toAlu(70 downto 67),toAlu(51 downto 36),toAlu(35 downto 20),
 			     toAlu(19 downto 4),toMem(16 downto 1),toWb(40 downto 25),toWb(19 downto 4),
 			     toAlu(52),clk,fwdSignal,ccrVal,ccrIn,aluResult);

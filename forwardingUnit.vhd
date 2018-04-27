@@ -29,10 +29,8 @@ end forwardingUnit;
 
 
 Architecture forwardingUnitImpl of forwardingUnit is 
-signal input : std_logic_vector(26 downto 0); 
 begin
-input <= rsrcIdEx & rdestIdEx & wbDestExMem & rdestExMem& wbDestMemWb&rdestMemWb& spSignalExMem &spSignalMemWb&spSignalIdEx&jmpDest& wbDestIfId &rdestIfId; 
-  process(clk , input) begin 
+  process(clk ) begin 
     if(clk='1') then  
 -- First assume there's no Forwarding  
      aluFwdSignalForRdest<='0'; 
