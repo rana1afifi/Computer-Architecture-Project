@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 entity dataMemory is
   port(memWrite,clk,pop,spSignal:in std_logic;
-       writeValue,aluResult,inPort:in std_logic_vector(15 downto 0);
+       writeValue,immValue,aluResult,inPort:in std_logic_vector(15 downto 0);
        wbValToPass: in std_logic_vector(1 downto 0);
        wbValue: out std_logic_vector(15 downto 0));
 end entity dataMemory;
@@ -23,7 +23,7 @@ Architecture implementionMem of dataMemory is
 	dataMem: ram generic map(n=>16,m=>10) port map(clk,memWrite,writeValue,address,memRead);
 	address<=std_logic_vector(unsigned(aluResult(9 downto 0))+1) when pop='0' and spSignal='1'
   	else aluResult(9 downto 0) when pop='1' and spSignal='1'
-	else writeValue(9 downto 0);
+	else immValue(9 downto 0);
 	process(clk)
 	begin
 		if(rising_edge(clk)) then
@@ -31,7 +31,7 @@ Architecture implementionMem of dataMemory is
             			when "00" => wbValue<= memRead;
 				when "01" => wbValue<= aluResult;
 				when "10" => wbValue<= inPort;
-				when others => wbValue<= writeValue; 
+				when others => wbValue<= immValue; 
 			end case; 
 		end if;
 	end process;

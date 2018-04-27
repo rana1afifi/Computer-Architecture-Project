@@ -67,8 +67,8 @@ port(address : in std_logic_vector(9 downto 0);
      dataout : out std_logic_vector(31 downto 0));
 end component;
 component dataMemory is
-  port(memWrite,clk,pop,spSignal:in std_logic;
-       writeValue,aluResult,inPort:in std_logic_vector(15 downto 0);
+   port(memWrite,clk,pop,spSignal:in std_logic;
+       writeValue,immValue,aluResult,inPort:in std_logic_vector(15 downto 0);
        wbValToPass: in std_logic_vector(1 downto 0);
        wbValue: out std_logic_vector(15 downto 0));
 end component;
@@ -84,7 +84,7 @@ port( clk : in std_logic;
 	    ) ; 
 end component;
 signal idEx,toAlu : std_logic_vector(70 downto 0); 
-signal exMem,toMem: std_logic_vector(45 downto 0);
+signal exMem,toMem: std_logic_vector(61 downto 0);
 signal memWb,toWb:std_logic_vector(40 downto 0);
 signal dataOut :std_logic_vector(31 downto 0);
 signal cntrl : std_logic_vector(18 downto 0); 
@@ -113,13 +113,14 @@ begin
 	aluEx : ALU port map(toAlu(70 downto 67),toAlu(51 downto 36),toAlu(35 downto 20),
 			     toAlu(19 downto 4),toMem(16 downto 1),toWb(40 downto 25),toWb(19 downto 4),
 			     toAlu(52),clk,"0000",ccrVal,ccrIn,aluResult);
-	exMem<=toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult&toAlu(0) when toAlu(53)='0'
-		else toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult(11 downto 0)&ccrVal&toAlu(0);
-	--wbValueToPass(2),wbDest(2),pop,memRead,memWrite,spSignal,retSignal,rtiSignal,
+
+	exMem<=toAlu(35 downto 20)&toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult&toAlu(0) when toAlu(53)='0'
+		else toAlu(31 downto 20)&ccrVal&toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult&toAlu(0);
+	--writeval,wbValueToPass(2),wbDest(2),pop,memRead,memWrite,spSignal,retSignal,rtiSignal,
 	--immValue&wbRdst,aluResult,ccrwb
-	EXMEMBuff:stageBuffer generic map (n => 46) port map(clk,reset,exMem,toMem);
------ mem write , clck , pop , spSignal , Write Value , ALU Result , inPort , WB Value to pass 2 , WB Value 16
-	mem:dataMemory port map(toMem(39),clk,toMem(41),toMem(38),toMem(35 downto 20),
+	EXMEMBuff:stageBuffer generic map (n => 62) port map(clk,reset,exMem,toMem);
+
+	mem:dataMemory port map(toMem(39),clk,toMem(41),toMem(38),toMem(61 downto 46),toMem(35 downto 20),
 				toMem(16 downto 1),inPort,toMem(45 downto 44),wbval);
 	--wbval,wbDest(2),wbRdst,aluResult(Spval),spSignal,retSignal,rtiSignal,ccrWb
 	memWb<=wbval&toMem(43 downto 42)&toMem(19 downto 1)&toMem(39 downto 37)&toMem(0);

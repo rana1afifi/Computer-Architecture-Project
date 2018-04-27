@@ -9,13 +9,15 @@ q : out std_logic_vector(n-1 downto 0));
 end my_nDFF;
 
 Architecture a_my_nDFF of my_nDFF is
+signal output:std_logic_vector(n-1 downto 0);
 begin
-Process (Clk,Rst)
+q<=output;
+Process (Clk,Rst,output,en)
 begin
 if Rst = '1' then
-q <= (others=>'0');
-elsif rising_edge(Clk) and en='1' then
-q <= d;
+output<= (others=>'0');
+elsif Clk='1' and en='1' then
+output <= d;
 end if;
 end process;
 end a_my_nDFF;

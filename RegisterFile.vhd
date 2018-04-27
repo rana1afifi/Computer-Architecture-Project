@@ -33,7 +33,7 @@ signal e: std_logic_vector(6 downto 0);
 	end generate;
 	sp: my_nDFF generic map (n => 16) port map(clk,'0',spEn,spWrite,readValue(6));
 	immValue<=immValueEa;
-	spEn<=e(6) or spSignal;
+	spEn<=(e(6) or spSignal);
 	spWrite<=spValue when spSignal='1'
 	else WbValue;
 	wbRdst<=rDst;
@@ -63,7 +63,7 @@ signal e: std_logic_vector(6 downto 0);
 		
 	process(clk)
 	begin
-		if wbDest="01" then
+		if wbDest="01" and clk='1' then
 			if WbAddress="000" then
 			e<="0000001";
 			elsif WbAddress="001" then
