@@ -37,29 +37,24 @@ begin
      aluFwdSignalTypeForRsrc<="11";
      aluFwdSignalTypeForRdest<='0';
      jmpFwd<="00";
--- Case 1: ALU to ALU FWD   
-     if (wbDestExMem="01") then
-         if(rsrcIdEx=rdestExMem) then 
+	-- Case 1: ALU to ALU FWD   
+         if(rsrcIdEx=rdestExMem) and (wbDestExMem="01") then 
             aluFwdSignalTypeForRsrc<="00" ; 
+	 -- Case 2: MEM to ALU FWD
+	 elsif (rsrcIdEx=rdestMemWb) and (wbDestMemWb="01") then
+	    aluFwdSignalTypeForRsrc<="01" ;
           end if; 
-      
-         if(rdestIdEx=rdestExMem) then 
+  -- Case 1: ALU to ALU FWD     
+         if(rdestIdEx=rdestExMem) and (wbDestExMem="01") then 
             aluFwdSignalTypeForRdest<='0' ; 
             aluFwdSignalForRdest<='1'; 
-        end if; 
-     end if; 
- 
--- Case 2: MEM to ALU FWD 
-      if (wbDestMemWb="01") then
-          if(rsrcIdEx=rdestMemWb) then 
-            aluFwdSignalTypeForRsrc<="01" ; 
-          end if; 
-      
-          if(rdestIdEx=rdestMemWb) then 
-            aluFwdSignalTypeForRdest<='1' ; 
+  -- Case 2: MEM to ALU FWD
+	 elsif (rdestIdEx=rdestMemWb) and (wbDestMemWb="01") then
+	    aluFwdSignalTypeForRdest<='1' ; 
             aluFwdSignalForRdest<='1'; 
-          end if; 
-      end if;  
+        end if; 
+  
+  
   
 -- Case 3: SP Forwarding: ALU to ALU -->FWD to Rsrc ALU Result , MEM to ALU --> FWD To Rsrc SP Value 
         if (spSignalIdEx='1')  then 

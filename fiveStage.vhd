@@ -115,7 +115,7 @@ signal memWb,toWb:std_logic_vector(40 downto 0);
 signal dataOut :std_logic_vector(31 downto 0);
 signal cntrl : std_logic_vector(18 downto 0); 
 signal instIn,instout: std_logic_vector(41 downto 0); 
-signal rSrcVal,rDstVal,immValue,aluResult,wbval:std_logic_vector(15 downto 0);
+signal rSrcVal,rDstVal,immValue,aluResult,wbval,FromAlu:std_logic_vector(15 downto 0);
 signal wbRdst,jmpDest:std_logic_vector(2 downto 0);
 signal ccrIn,ccrVal,fwdSignal:std_logic_vector(3 downto 0);
 signal JMPTYPE,memValueToPass: std_logic_vector(1 downto 0); 
@@ -138,9 +138,11 @@ begin
 	--intSignal,immSignal,rSrcVal&rDstVal&immValue&wbRdst,ccrwb
 	IDEXBuff : stageBuffer generic map (n => 74) port map(clk,reset,idEx,toAlu);
 	ccr:ccrUnit port map(clk,toAlu(60),toWb(0),ccrIn,toWb(28 downto 25),toAlu(66 downto 65),ccrVal);
+	FromAlu<=toMem(35 downto 20) when toMem(45 downto 44)="11"
+	    else toMem(16 downto 1);
 	fwdSignal<=aluFwdSignalForRdest&aluFwdSignalTypeForRdest&aluFwdSignalTypeForRsrc;
 	aluEx : ALU port map(toAlu(70 downto 67),toAlu(51 downto 36),toAlu(35 downto 20),
-			     toAlu(19 downto 4),toMem(16 downto 1),toWb(40 downto 25),toWb(19 downto 4),
+			     toAlu(19 downto 4),FromAlu,toWb(40 downto 25),toWb(19 downto 4),
 			     toAlu(52),clk,fwdSignal,ccrVal,ccrIn,aluResult);
 
 	exMem<=toAlu(35 downto 20)&toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult&toAlu(0) when toAlu(53)='0'
@@ -151,7 +153,7 @@ begin
 
 	mem:dataMemory port map(toMem(39),clk,toMem(41),toMem(38),toMem(61 downto 46),toMem(35 downto 20),
 				toMem(16 downto 1),inPort,toMem(45 downto 44),wbval);
-	--wbval,wbDest(2),wbRdst,aluResult(Spval),spSignal,retSignal,rtiSignal,ccrWb
+	--wbval,wbDest(2),wbRdst,spValue,spSignal,retSignal,rtiSignal,ccrWb
 	memWb<=wbval&toMem(43 downto 42)&toMem(19 downto 1)&toMem(38 downto 36)&toMem(0);
 	MEMWBBuff:stageBuffer generic map (n => 41) port map(clk,reset,memWb,toWb);
 	--clk,memRead,Regloaded(id/ex),rsrc(if/id),rdst(if/id),instop,out
