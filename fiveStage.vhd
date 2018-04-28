@@ -22,6 +22,7 @@ port(  clk : in std_logic;
 	     -- for ALU to ALU FWD
 	     wbDestExMem: in std_logic_vector(1 downto 0); -- equal to 01 if reg  
 	     rdestExMem:in std_logic_vector (2 downto 0);
+	     memReadExMem:in std_logic; 
 	     -- MEM to ALU FWD
 	     wbDestMemWb: in std_logic_vector(1 downto 0); -- equal to 01 if reg  
 	     rdestMemWb:in std_logic_vector (2 downto 0);
@@ -123,9 +124,12 @@ signal JMP,ccrWb,stall,aluFwdSignalForRdest,aluFwdSignalTypeForRdest: std_logic;
 signal aluFwdSignalTypeForRsrc,jmpFWD: std_logic_vector(1 downto 0);  
 
 begin
+  --- Stage 1: Fetch
 	instrucMem: instMem port map(pc,dataOut);
 	instIn<=dataOut&pc;
 	IFIDBuff : stageBuffer generic map (n => 42) port map(clk,reset,instIn,instout);
+	  
+	---Stage 2: Decode
 	control : controlUnit port map(clk,instout(41 downto 37),JMP,memValueToPass,JMPTYPE,cntrl,ccrWb);
 	reg: RegisterFile port map(clk,reset,toWb(3),memValueToPass,toWb(24 downto 23),toWb(22 downto 20),
 			   	   instout(28 downto 26),instout(31 downto 29),toWb(40 downto 25),
@@ -137,9 +141,12 @@ begin
 	--memRead,memWrite,spSignal,retSignal,rtiSignal,
 	--intSignal,immSignal,rSrcVal&rDstVal&immValue&wbRdst,ccrwb
 	IDEXBuff : stageBuffer generic map (n => 74) port map(clk,reset,idEx,toAlu);
+	  
+ -----Stage 3:Execute
 	ccr:ccrUnit port map(clk,toAlu(60),toWb(0),ccrIn,toWb(28 downto 25),toAlu(66 downto 65),ccrVal);
-	FromAlu<=toMem(35 downto 20) when toMem(45 downto 44)="11"
-	    else toMem(16 downto 1);
+	FromAlu<=toMem(35 downto 20) when toMem(45 downto 44)="11" --imm value
+	        else inPort when toMem(45 downto 44)="10"              --inPort
+	        else toMem(16 downto 1);                           --aluResult
 	fwdSignal<=aluFwdSignalForRdest&aluFwdSignalTypeForRdest&aluFwdSignalTypeForRsrc;
 	aluEx : ALU port map(toAlu(70 downto 67),toAlu(51 downto 36),toAlu(35 downto 20),
 			     toAlu(19 downto 4),FromAlu,toWb(40 downto 25),toWb(19 downto 4),
@@ -150,18 +157,22 @@ begin
 	--writeval(Rdst),wbValueToPass(2),wbDest(2),pop,memRead,memWrite,spSignal,retSignal,rtiSignal,
 	--immValue&wbRdst,aluResult,ccrwb
 	EXMEMBuff:stageBuffer generic map (n => 62) port map(clk,reset,exMem,toMem);
-
+	  
+  ------Stage 4:Memory 
 	mem:dataMemory port map(toMem(39),clk,toMem(41),toMem(38),toMem(61 downto 46),toMem(35 downto 20),
 				toMem(16 downto 1),inPort,toMem(45 downto 44),wbval);
 	--wbval,wbDest(2),wbRdst,spValue,spSignal,retSignal,rtiSignal,ccrWb
 	memWb<=wbval&toMem(43 downto 42)&toMem(19 downto 1)&toMem(38 downto 36)&toMem(0);
 	MEMWBBuff:stageBuffer generic map (n => 41) port map(clk,reset,memWb,toWb);
+	  
+	  
+	  ---------------------------------Units----------------------------------------------------
 	--clk,memRead,Regloaded(id/ex),rsrc(if/id),rdst(if/id),instop,out
 	HDU:hazardDetectionUnit port map(clk,toAlu(58),toAlu(3 downto 1),instout(31 downto 29),
 					 instout(28 downto 26),instout(41 downto 37),stall);
 	
 	FU:forwardingUnit port map(clk,toAlu(73 downto 71),toAlu(3 downto 1)
-				  ,toMem(43 downto 42),toMem(19 downto 17)
+				  ,toMem(43 downto 42),toMem(19 downto 17),toMem(40)
 				  ,toWb(24 downto 23),toWb(22 downto 20)
 				  ,toMem(38),toWb(3),toAlu(56)
 				  ,jmpDest,cntrl(10 downto 9),instout(28 downto 26)
