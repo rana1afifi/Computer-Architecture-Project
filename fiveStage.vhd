@@ -2,8 +2,7 @@ Library ieee;
 Use ieee.std_logic_1164.all;
 
 Entity fiveStage is
-port( 	clk,reset : in std_logic;
-	pc : in std_logic_vector(9 downto 0);
+port( 	clk,reset,interrupt : in std_logic;
 	inPort: in std_logic_vector(15 downto 0);
 	outPort:out std_logic_vector(15 downto 0));
 end fiveStage;
@@ -110,6 +109,25 @@ port( clk : in std_logic;
 	    ccrOutput: out std_logic_vector(3 downto 0) 
 	    ) ; 
 end component;
+
+component pcControlUnit is
+port(  clk : in std_logic; 
+       wbValue: in std_logic_vector(9 downto 0); -- can either hold PC value from memory or Rdest in case of FWD
+       rdest:in std_logic_vector(9 downto 0); -- rDest of jmp signal  
+       -- for forwarding 
+       aluResult : in  std_logic_vector(9 downto 0);
+       fwdSignalType: in std_logic_vector (1 downto 0); -- 11 for wbValue , 10 for aluResult
+    
+       jmpSignal , intSignal , resetSignal , stallSignal:in std_logic;
+       retMemWB ,rtiMemWb :in std_logic ;          
+       
+       instOpCode:in std_logic_vector (4 downto 0); 
+       --output in rising edge
+       pcValue:out std_logic_vector(9 downto 0) 
+	     
+	   );
+end component;
+
 signal idEx,toAlu : std_logic_vector(73 downto 0); 
 signal exMem,toMem: std_logic_vector(61 downto 0);
 signal memWb,toWb:std_logic_vector(40 downto 0);
@@ -117,10 +135,11 @@ signal dataOut :std_logic_vector(31 downto 0);
 signal cntrl : std_logic_vector(18 downto 0); 
 signal instIn,instout: std_logic_vector(41 downto 0); 
 signal rSrcVal,rDstVal,immValue,aluResult,wbval,FromAlu:std_logic_vector(15 downto 0);
+signal pc :  std_logic_vector(9 downto 0);
 signal wbRdst,jmpDest:std_logic_vector(2 downto 0);
 signal ccrIn,ccrVal,fwdSignal:std_logic_vector(3 downto 0);
-signal JMPTYPE,memValueToPass: std_logic_vector(1 downto 0); 
-signal JMP,ccrWb,stall,aluFwdSignalForRdest,aluFwdSignalTypeForRdest: std_logic;
+signal jmpType,memValueToPass: std_logic_vector(1 downto 0); 
+signal jmp,ccrWb,stall,jmpSig,aluFwdSignalForRdest,aluFwdSignalTypeForRdest: std_logic;
 signal aluFwdSignalTypeForRsrc,jmpFWD: std_logic_vector(1 downto 0);  
 
 begin
@@ -130,7 +149,7 @@ begin
 	IFIDBuff : stageBuffer generic map (n => 42) port map(clk,reset,instIn,instout);
 	  
 	---Stage 2: Decode
-	control : controlUnit port map(clk,instout(41 downto 37),JMP,memValueToPass,JMPTYPE,cntrl,ccrWb);
+	control : controlUnit port map(clk,instout(41 downto 37),jmp,memValueToPass,jmpType,cntrl,ccrWb);
 	reg: RegisterFile port map(clk,reset,toWb(3),memValueToPass,toWb(24 downto 23),toWb(22 downto 20),
 			   	   instout(28 downto 26),instout(31 downto 29),toWb(40 downto 25),
 			   	   instout(9 downto 0),toWb(19 downto 4),instout(25 downto 10),
@@ -177,7 +196,15 @@ begin
 				  ,toMem(38),toWb(3),toAlu(56)
 				  ,jmpDest,cntrl(10 downto 9),instout(28 downto 26)
 	    			  ,aluFwdSignalForRdest,aluFwdSignalTypeForRsrc,aluFwdSignalTypeForRdest,jmpFWD);
-
+	jmpU:jmpUnit port map(clk,jmp,stall,jmpType,ccrVal(2 downto 0),jmpSig);
+	  
+  pcUnit: pcControlUnit port map (clk , 
+          toWb(34 downto 25) , toAlu(29 downto 20) , toMem(10 downto 1) ,
+          jmpFWD , jmpSig , interrupt , reset , stall , 
+          toWb(2) , toWb(1) , 
+          instout(41 downto 37),
+          pc);
+  
 	process(clk)
 	begin
 		if toWb(24 downto 23)="10" and clk='1' then
