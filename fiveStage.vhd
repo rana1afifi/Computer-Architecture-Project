@@ -11,7 +11,7 @@ Architecture fiveStageImp of fiveStage is
 
 component stageBuffer is
 Generic ( n : integer := 8);
-port( 	clk,reset : in std_logic;
+port( 	clk,reset,en : in std_logic;
 	dataIn : in std_logic_vector(n-1 downto 0);
 	dataOut : out std_logic_vector(n-1 downto 0));
 end component;
@@ -78,7 +78,7 @@ component ALU is
 end component;
 
 component RegisterFile is
-port( clk,RST,spSignal:in std_logic;
+port( clk,RST,spSignal,immSignal:in std_logic;
 	memValToPass,wbDest:in std_logic_vector(1 downto 0);
 	WbAddress,rDst,rSrc:in std_logic_vector(2 downto 0);
 	WbValue:in std_logic_vector(15 downto 0);
@@ -90,7 +90,9 @@ port( clk,RST,spSignal:in std_logic;
 end component;
 component instMem is
 port(address : in std_logic_vector(9 downto 0);
-     dataout : out std_logic_vector(31 downto 0));
+     dataout : out std_logic_vector(31 downto 0);
+     resetPc:out std_logic_vector(9 downto 0); 
+     interruptPc:out std_logic_vector(9 downto 0));
 end component;
 component dataMemory is
    port(memWrite,clk,pop,spSignal:in std_logic;
@@ -117,7 +119,10 @@ port(  clk : in std_logic;
        -- for forwarding 
        aluResult : in  std_logic_vector(9 downto 0);
        fwdSignalType: in std_logic_vector (1 downto 0); -- 11 for wbValue , 10 for aluResult
-    
+    --pc for reset and interrupt
+     	resetPc:in std_logic_vector(9 downto 0); 
+     	interruptPc:in std_logic_vector(9 downto 0);
+    ----
        jmpSignal , intSignal , resetSignal , stallSignal:in std_logic;
        retMemWB ,rtiMemWb :in std_logic ;          
        
@@ -135,22 +140,29 @@ signal dataOut :std_logic_vector(31 downto 0);
 signal cntrl : std_logic_vector(18 downto 0); 
 signal instIn,instout: std_logic_vector(41 downto 0); 
 signal rSrcVal,rDstVal,immValue,aluResult,wbval,FromAlu:std_logic_vector(15 downto 0);
-signal pc :  std_logic_vector(9 downto 0);
+signal pc,resetPc,interruptPc :  std_logic_vector(9 downto 0);
 signal wbRdst,jmpDest:std_logic_vector(2 downto 0);
 signal ccrIn,ccrVal,fwdSignal:std_logic_vector(3 downto 0);
+signal opCode:std_logic_vector(4 downto 0);
 signal jmpType,memValueToPass: std_logic_vector(1 downto 0); 
 signal jmp,ccrWb,stall,jmpSig,aluFwdSignalForRdest,aluFwdSignalTypeForRdest: std_logic;
 signal aluFwdSignalTypeForRsrc,jmpFWD: std_logic_vector(1 downto 0);  
+signal counter:integer;
 
 begin
   --- Stage 1: Fetch
-	instrucMem: instMem port map(pc,dataOut);
-	instIn<=dataOut&pc;
-	IFIDBuff : stageBuffer generic map (n => 42) port map(clk,reset,instIn,instout);
+	instrucMem: instMem port map(pc,dataOut,resetPc,interruptPc);
+	instIn<="10001000001101011111100000000000"&pc when interrupt='1'
+	   else "11111000000000001111100000000000"&pc when counter>0
+	   else  dataOut&pc;
+	
+	IFIDBuff : stageBuffer generic map (n => 42) port map(clk,reset,stall,instIn,instout);
 	  
 	---Stage 2: Decode
-	control : controlUnit port map(clk,instout(41 downto 37),jmp,memValueToPass,jmpType,cntrl,ccrWb);
-	reg: RegisterFile port map(clk,reset,toWb(3),memValueToPass,toWb(24 downto 23),toWb(22 downto 20),
+	opCode<=instout(41 downto 37) when stall='0' and jmpSig='0' 
+	   else "11111";--flushing
+	control : controlUnit port map(clk,opCode,jmp,memValueToPass,jmpType,cntrl,ccrWb);
+	reg: RegisterFile port map(clk,reset,toWb(3),cntrl(0),memValueToPass,toWb(24 downto 23),toWb(22 downto 20),
 			   	   instout(28 downto 26),instout(31 downto 29),toWb(40 downto 25),
 			   	   instout(9 downto 0),toWb(19 downto 4),instout(25 downto 10),
 			  	   rSrcVal,rDstVal,immValue,wbRdst);
@@ -159,10 +171,10 @@ begin
 	-- rsrc,aluOpCode(4),ccrControlSig(2),wbValueToPass(2),wbDest(2),ccrMode,pop,
 	--memRead,memWrite,spSignal,retSignal,rtiSignal,
 	--intSignal,immSignal,rSrcVal&rDstVal&immValue&wbRdst,ccrwb
-	IDEXBuff : stageBuffer generic map (n => 74) port map(clk,reset,idEx,toAlu);
+	IDEXBuff : stageBuffer generic map (n => 74) port map(clk,reset,'0',idEx,toAlu);
 	  
  -----Stage 3:Execute
-	ccr:ccrUnit port map(clk,toAlu(60),toWb(0),ccrIn,toWb(28 downto 25),toAlu(66 downto 65),ccrVal);
+	ccr:ccrUnit port map(clk,toAlu(60),toWb(0),ccrIn,toWb(38 downto 35),toAlu(66 downto 65),ccrVal);
 	FromAlu<=toMem(35 downto 20) when toMem(45 downto 44)="11" --imm value
 	        else inPort when toMem(45 downto 44)="10"              --inPort
 	        else toMem(16 downto 1);                           --aluResult
@@ -172,17 +184,17 @@ begin
 			     toAlu(52),clk,fwdSignal,ccrVal,ccrIn,aluResult);
 
 	exMem<=toAlu(35 downto 20)&toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult&toAlu(0) when toAlu(53)='0'
-		else toAlu(31 downto 20)&ccrVal&toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult&toAlu(0);
+		else ccrVal&toAlu(31 downto 20)&toAlu(64 downto 61)&toAlu(59 downto 54)&toAlu(19 downto 1)&aluResult&toAlu(0);
 	--writeval(Rdst),wbValueToPass(2),wbDest(2),pop,memRead,memWrite,spSignal,retSignal,rtiSignal,
 	--immValue&wbRdst,aluResult,ccrwb
-	EXMEMBuff:stageBuffer generic map (n => 62) port map(clk,reset,exMem,toMem);
+	EXMEMBuff:stageBuffer generic map (n => 62) port map(clk,reset,'0',exMem,toMem);
 	  
   ------Stage 4:Memory 
 	mem:dataMemory port map(toMem(39),clk,toMem(41),toMem(38),toMem(61 downto 46),toMem(35 downto 20),
 				toMem(16 downto 1),inPort,toMem(45 downto 44),wbval);
 	--wbval,wbDest(2),wbRdst,spValue,spSignal,retSignal,rtiSignal,ccrWb
 	memWb<=wbval&toMem(43 downto 42)&toMem(19 downto 1)&toMem(38 downto 36)&toMem(0);
-	MEMWBBuff:stageBuffer generic map (n => 41) port map(clk,reset,memWb,toWb);
+	MEMWBBuff:stageBuffer generic map (n => 41) port map(clk,reset,'0',memWb,toWb);
 	  
 	  
 	  ---------------------------------Units----------------------------------------------------
@@ -199,16 +211,22 @@ begin
 	jmpU:jmpUnit port map(clk,jmp,stall,jmpType,ccrVal(2 downto 0),jmpSig);
 	  
   pcUnit: pcControlUnit port map (clk , 
-          toWb(34 downto 25) , toAlu(29 downto 20) , toMem(10 downto 1) ,
-          jmpFWD , jmpSig , interrupt , reset , stall , 
+          toWb(34 downto 25) , toAlu(13 downto 4) , toMem(10 downto 1) ,
+          jmpFWD ,resetPc,interruptPc, jmpSig , cntrl(1) , reset , stall , 
           toWb(2) , toWb(1) , 
           instout(41 downto 37),
           pc);
   
-	process(clk)
+	process(clk,cntrl)
 	begin
 		if toWb(24 downto 23)="10" and clk='1' then
 			outPort<=toWb(40 downto 25);
+		end if;
+		if cntrl(2)='1' or cntrl(3)='1' then
+			counter<=3;
+		end if;
+		if rising_edge(clk) and counter>0 then
+			counter<=counter-1;
 		end if;
 	end process;
 end fiveStageImp;

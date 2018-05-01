@@ -9,7 +9,10 @@ port(  clk : in std_logic;
        -- for forwarding 
        aluResult : in  std_logic_vector(9 downto 0);
        fwdSignalType: in std_logic_vector (1 downto 0); -- 11 for wbValue , 10 for aluResult
-    
+    --pc for reset and interrupt
+     resetPc:in std_logic_vector(9 downto 0); 
+     interruptPc:in std_logic_vector(9 downto 0);
+    ----
        jmpSignal , intSignal , resetSignal , stallSignal:in std_logic;
        retMemWB ,rtiMemWb :in std_logic ;          
        
@@ -48,9 +51,9 @@ begin
           elsif (retMemWb='1' or rtiMemWb='1') then
                 pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(wbValue))-1,10));
           elsif (resetSignal='1') then
-                  pcVar:= "0000000000";
+                  pcVar:= resetPc;
           elsif (intSignal='1') then 
-                  pcVar:= "0000000001"; 
+                  pcVar:= interruptPc; 
           else          
              pcVar:=pcReg; 
           

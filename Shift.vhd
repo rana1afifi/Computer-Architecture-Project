@@ -23,7 +23,7 @@ signal neg,z,c:std_logic;
 
     neg<='1' when signed(output)<0
 	else '0';
-    z<='1' when unsigned(output)="00"
+    z<='1' when unsigned(output)=0
 	else '0';
     with S select
 	   c<= A(15) when"00",

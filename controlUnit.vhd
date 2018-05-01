@@ -21,7 +21,7 @@ begin
 	Process (clk)
 	begin
 	if(rising_edge(clk)) then
-		jmpType<=opCode(1 downto 0);
+		
 		if opCode(4)='0' then
 			if opCode(3 downto 2)="11" then
 				aluOp<= "0000";
@@ -51,11 +51,17 @@ begin
 -- /////////////////////////////////////////////////////////////////////////////////////////////////////
 		if opCode (4 downto 2) = "110" then
 			ccrControl<=opCode(1 downto 0);
-			jmp<='1';
+			jmpType<=opCode(1 downto 0);
+			if opCode(1 downto 0) /="11" then
+				jmp<='1';
+			else
+				jmp<='0';
+			end if;
 		else 
 			ccrControl<="00";
-			if opCode = "10011" then
+			if opCode (4 downto 1) = "1001" then
 				jmp<='1';
+				jmpType<="11";
 			else 
 				jmp<='0';
 			end if;

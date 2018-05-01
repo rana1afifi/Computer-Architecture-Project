@@ -23,7 +23,7 @@ signal neg,z:std_logic;
 
      neg<='1' when signed(output)<0
 	else '0';
-     z<='1' when unsigned(output)="00"
+     z<='1' when unsigned(output)=0
 	else '0';
      cout<=cin(3 downto 2)&neg&z;
      F<=output;

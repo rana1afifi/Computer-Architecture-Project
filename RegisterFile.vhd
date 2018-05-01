@@ -4,7 +4,7 @@ use ieee.numeric_std.all;
 
 
 entity RegisterFile is
-  port( clk,RST,spSignal:in std_logic;
+  port( clk,RST,spSignal,immSignal:in std_logic;
 	memValToPass,wbDest:in std_logic_vector(1 downto 0);
 	WbAddress,rDst,rSrc:in std_logic_vector(2 downto 0);
 	WbValue:in std_logic_vector(15 downto 0);
@@ -17,12 +17,18 @@ end entity RegisterFile;
 
 Architecture RegisterFileImp of RegisterFile is
 type regOut is array(0 to 6) of std_logic_vector(15 downto 0);
-	component my_nDFF is
+component my_nDFF is
 	Generic ( n : integer := 16);
 	port( 	Clk,Rst,en : in std_logic;
 		d : in std_logic_vector(n-1 downto 0);
 		q : out std_logic_vector(n-1 downto 0));
-	end component;
+end component;
+component stackPionter is
+Generic ( n : integer := 16);
+port( Clk,Rst,en : in std_logic;
+d : in std_logic_vector(n-1 downto 0);
+q : out std_logic_vector(n-1 downto 0));
+end component;
 signal readValue: regOut;
 signal spWrite,rDstValue: std_logic_vector(15 downto 0);
 signal spEn:std_logic;
@@ -31,14 +37,15 @@ signal e: std_logic_vector(6 downto 0);
 	loop1: for i in 0 to 5 generate
 		fx: my_nDFF generic map (n => 16) port map(clk,RST,e(i),WbValue,readValue(i));
 	end generate;
-	sp: my_nDFF generic map (n => 16) port map(clk,'0',spEn,spWrite,readValue(6));
-	immValue<=immValueEa;
+	sp: stackPionter generic map (n => 16) port map(clk,RST,spEn,spWrite,readValue(6));
+	immValue<=immValueEa when immSignal='1'
+	     else rDstValue;
 	spEn<=(e(6) or spSignal);
 	spWrite<=spValue when spSignal='1'
 	else WbValue;
 	wbRdst<=rDst;
 	rDstVal<="000000"&pcValue when memValToPass="01"
-	else "000000"&std_logic_vector(unsigned(pcValue)+1) when memValToPass="10"
+	else "000000"&std_logic_vector(unsigned(pcValue)+2) when memValToPass="10"
 	else rDstValue;
 	with rDst select
 		       rDstValue<=readValue(0) when "000",

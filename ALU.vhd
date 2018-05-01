@@ -53,7 +53,7 @@ signal cy,cz,cx:std_logic_vector(3 downto 0);
 	     else fromMem when fwdSignal(3 downto 2)="11"
 	     else immValue when immSignal='1'
 	     else rDst ;
-	process(clk,cin,z,x,y)
+	process(clk,cin,z,x,y,fwdSignal)
 	begin
 		if(clk='1') then
 			case aluOp(3 downto 2)  is 

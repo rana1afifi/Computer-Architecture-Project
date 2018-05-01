@@ -31,7 +31,7 @@ signal neg,z:std_logic;
 	else B;
      neg<='1' when signed(output)<0
 	else '0';
-     z<='1' when unsigned(output)="00"
+     z<='1' when unsigned(output)=0
 	else '0';
 	
      cout<= c(1)&not c(0)&neg&z when s="10" or s="01" else c&neg&z;
