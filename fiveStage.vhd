@@ -167,7 +167,8 @@ begin
 			   	   instout(9 downto 0),toWb(19 downto 4),instout(25 downto 10),
 			  	   rSrcVal,rDstVal,immValue,wbRdst);
 
-	idEx<=instout(31 downto 29)&cntrl&rSrcVal&rDstVal&immValue&wbRdst&ccrWb;
+	idEx<=instout(31 downto 29)&cntrl&rSrcVal&rDstVal&immValue&"111"&ccrWb when stall='1'
+	  else instout(31 downto 29)&cntrl&rSrcVal&rDstVal&immValue&wbRdst&ccrWb;
 	-- rsrc,aluOpCode(4),ccrControlSig(2),wbValueToPass(2),wbDest(2),ccrMode,pop,
 	--memRead,memWrite,spSignal,retSignal,rtiSignal,
 	--intSignal,immSignal,rSrcVal&rDstVal&immValue&wbRdst,ccrwb

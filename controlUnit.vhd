@@ -18,9 +18,9 @@ signal ccrM,popSig,memR,memW,spSig,retSig,rtiSig,intSig,immSig : std_logic;
 signal aluOp : std_logic_vector(3 downto 0);
 signal ccrControl,wbPass,wbDst : std_logic_vector(1 downto 0);
 begin
-	Process (clk)
+	Process (clk,opCode)
 	begin
-	if(rising_edge(clk)) then
+	if(clk='1') then
 		
 		if opCode(4)='0' then
 			if opCode(3 downto 2)="11" then
