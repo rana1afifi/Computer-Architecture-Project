@@ -53,17 +53,18 @@ public static void setup()
         }
 }
 
-public static void writeInstructions(BufferedWriter writer,Scanner scan,int next,int ic)
+public static void writeInstructions()
 {
     String instruction,instOpCode;
     String tokens[],parameters[];
+    int ic = 2;
     while(scan.hasNextLine())
     {
         try {
             instruction=scan.nextLine();
-            if(instruction.equals("."+next))
+            if(instruction.subSequence(0,1).equals("."))
             { 
-                while(ic<next)
+                while(ic<Integer.decode(instruction.substring(1)))
                 {
                     writer.write("0000000000000000");
                     writer.newLine();
@@ -132,23 +133,40 @@ public static void writeInstructions(BufferedWriter writer,Scanner scan,int next
             Logger.getLogger(Assembler.class.getName()).log(Level.SEVERE, null, ex);
         }
             }
- 
+        try {
+            writer.close();
+        } catch (IOException ex) {
+            Logger.getLogger(Assembler.class.getName()).log(Level.SEVERE, null, ex);
+        }
+            scan.close();
     
 }
 
 public static void writeData()
 {
+    int dataLocation;
+    String data;
+    int dc=0;
         try { 
-            int dataLocation = Integer.decode(datascan.nextLine().substring(1));
-            for(int i=0; i < dataLocation ;i++)
-            {
-                datawriter.write("0000000000000000");
-                datawriter.newLine();
-            }
             while(datascan.hasNextLine())
             {
-                datawriter.write(String.format("%016d",Integer.parseInt(Integer.toBinaryString(Integer.decode(datascan.nextLine())))));
-                datawriter.newLine();
+                data = datascan.nextLine();
+                if(data.subSequence(0, 1).equals("."))
+                {
+                    dataLocation = Integer.decode(data.substring(1));
+                    while(dc<dataLocation)
+                    {
+                        datawriter.write("0000000000000000");
+                        datawriter.newLine();
+                        dc++;
+                    }  
+                }
+                else
+                {
+                    datawriter.write(String.format("%016d",Integer.parseInt(Integer.toBinaryString(Integer.decode(data)))));
+                    datawriter.newLine();
+                    dc++;
+                }
             }
             datawriter.close();
             datascan.close();
@@ -169,30 +187,9 @@ public static void main(String[] args) throws IOException {
             int ISR=Integer.decode(scan.nextLine());
             writer.write(String.format("%016d",Integer.parseInt(Integer.toBinaryString(ISR))));
             writer.newLine();
-            
-            if (ISR>startAddress)
-            {
-                for(int i=0;i<startAddress-2;i++)
-                {
-                    writer.write("0000000000000000");
-                    writer.newLine();
-                }
-                writeInstructions(writer,scan,ISR,startAddress);
+         
+            writeInstructions();
    
-            }
-            else
-            {
-               for(int i=0;i<ISR-2;i++)
-                {
-                    writer.write("0000000000000000");
-                    writer.newLine();
-                }
-                writeInstructions(writer,scan,startAddress,ISR);
-            }
-            
-            writer.close();
-            scan.close();
-        
     }
 }
          
