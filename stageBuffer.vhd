@@ -4,6 +4,7 @@ Use ieee.std_logic_1164.all;
 Entity stageBuffer is
 Generic ( n : integer := 8);
 port( 	clk,reset,en : in std_logic;
+  resetValue: in std_logic_vector(n-1 downto 0);
 	dataIn : in std_logic_vector(n-1 downto 0);
 	dataOut : out std_logic_vector(n-1 downto 0));
 end stageBuffer;
@@ -15,7 +16,7 @@ begin
 		dataOut<=dataIn;
 	end if;
 	if(reset='1') then
-		dataOut<=(others=>'0');
+		dataOut<=resetValue;
 	end if;
 	end process;
 end stageBufferImp;

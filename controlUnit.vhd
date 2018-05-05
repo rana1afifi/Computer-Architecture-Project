@@ -2,7 +2,7 @@ Library ieee;
 Use ieee.std_logic_1164.all;
 
 Entity controlUnit is
-port( 	clk : in std_logic;
+port(	clk : in std_logic;
 	opCode: in std_logic_vector(4 downto 0);
 	jmp : out std_logic;
 	memValueToPass,jmpType : out std_logic_vector(1 downto 0);
@@ -20,6 +20,8 @@ signal ccrControl,wbPass,wbDst : std_logic_vector(1 downto 0);
 begin
 	Process (clk,opCode)
 	begin
+
+	
 	if(clk='1') then
 		
 		if opCode(4)='0' then

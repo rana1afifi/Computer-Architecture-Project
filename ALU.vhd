@@ -8,7 +8,8 @@ entity ALU is
        fwdSignal:in std_logic_vector(3 downto 0);
        cin: in std_logic_vector(3 downto 0);
        cout: out std_logic_vector(3 downto 0);
-       aluResult:out std_logic_vector(15 downto 0));
+       aluResult:out std_logic_vector(15 downto 0); 
+       rDstOut:out std_logic_vector(15 downto 0));
 end entity ALU;
 
 Architecture implementionALU of ALU is
@@ -62,7 +63,7 @@ signal cy,cz,cx:std_logic_vector(3 downto 0);
 				when "10" => aluResult<=y; cout<=cy; 
 				when others => aluResult <=Op1; cout<=cin; 
 			end case; 
-                     
+      rDstout<=Op2;             
 		end if; 
             end process; 
 end Architecture;
