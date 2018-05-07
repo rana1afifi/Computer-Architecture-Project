@@ -2,7 +2,7 @@ Library ieee;
 Use ieee.std_logic_1164.all;
 
 Entity forwardingUnit is
-port(  clk : in std_logic; 
+port(  clk,stall : in std_logic;
 	     rsrcIdEx , rdestIdEx : in std_logic_vector(2 downto 0); 
 	     -- for ALU to ALU FWD
 	     wbDestExMem: in std_logic_vector(1 downto 0); -- equal to 01 if reg  
@@ -17,8 +17,8 @@ port(  clk : in std_logic;
 	     spSignalIdEx:in std_logic; 
 	     -- JMP Forwarding 
 	     jmpDest: in std_logic_vector( 2 downto 0); 
-	     wbDestIfId: in std_logic_vector( 1 downto 0); 
-	     rdestIfId: in std_logic_vector (2 downto 0);
+	     wbDestIdEx: in std_logic_vector( 1 downto 0);
+	     memReadIdEx:in std_logic;
 	    -- Ouput
 	     aluFwdSignalForRdest:out std_logic; -- is there FWD?
 	     aluFwdSignalTypeForRsrc:out std_logic_vector(1 downto 0); -- 00 for ALU-ALU , 01 for Mem-ALU , 10 for SP Value 
@@ -33,11 +33,13 @@ Architecture forwardingUnitImpl of forwardingUnit is
 begin
   process(clk ) begin 
     if(clk='1') then  
--- First assume there's no Forwarding  
+-- First assume there's no Forwarding 
+     if(stall='0') then
      aluFwdSignalForRdest<='0'; 
      aluFwdSignalTypeForRsrc<="11";
      aluFwdSignalTypeForRdest<='0';
      jmpFwd<="00";
+     end if;
 	-- FOR RSRC: Case 1: ALU to ALU FWD   
          if(rsrcIdEx=rdestExMem) and (wbDestExMem="01")and (memReadExMem='0') then 
             aluFwdSignalTypeForRsrc<="00" ; 
@@ -67,17 +69,14 @@ begin
         end if;
     
 -- Case 4: JMP Forwarding 
-         if(wbDestExMem="01") then
-              if ( jmpDest=rdestExMem) then
-                  jmpFwd<="11"; 
+         if(wbDestIdEx="01") then
+              if ( jmpDest=rdestIdEx) and (memReadIDEx='0') then
+                  jmpFwd<="10"; 
+              elsif ( jmpDest=rdestIdEx) and (memReadIDEx='1') then
+                  jmpFwd<="11";
               end if; 
          end if;
          
-         if(wbDestIfId="01") then
-              if ( jmpDest=rdestIfId) then
-                  jmpFwd<="10"; 
-              end if; 
-         end if;    
          
        end if;
       end process; 

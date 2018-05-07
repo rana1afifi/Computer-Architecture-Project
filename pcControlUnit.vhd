@@ -35,25 +35,25 @@ begin
   variable pcVar: std_logic_vector(9 downto 0);
   begin 
       
-      if(clk='1') then
+      if(rising_edge(clk)) then --recently changed from 1
       
           if (jmpSignal='1')  then 
               if (fwdSignalType="11") then 
-                pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(wbValue))-1,10));
+                pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(wbValue)),10));
                 
               elsif (fwdSignalType="10") then 
-                 pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(aluResult))-1,10)); 
+                 pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(aluResult)),10)); 
                  
               elsif( fwdSignalType(1)='0') then 
-                   pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(rdest))-1,10));               
+                   pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(rdest)),10));               
               end if;
               
           elsif (retMemWb='1' or rtiMemWb='1') then
-                pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(wbValue))-1,10));
+                pcVar:=std_logic_vector(to_unsigned(to_integer(unsigned(wbValue)),10));
           elsif (resetSignal='1') then
-                  pcVar:= resetPc;
+                  pcVar:= std_logic_vector(to_unsigned(to_integer(unsigned(resetPc)),10));
           elsif (intSignal='1') then 
-                  pcVar:= interruptPc; 
+                 pcVar:= std_logic_vector(to_unsigned(to_integer(unsigned(interruptPC)),10));
           else          
              pcVar:=pcReg; 
           
@@ -64,8 +64,10 @@ begin
 -----------------------------------------------------------------------------            
         
    end if;    
-    if(rising_edge(clk)) then
-    if(stallSignal='1') then
+   
+ if(rising_edge(clk)) then
+    
+if(stallSignal='1' or jmpSignal='1' or retMemWb='1' or rtiMemWb='1' or resetSignal='1' or intSignal='1') then
           
           pcReg:=pcReg ; 
         else  

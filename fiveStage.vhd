@@ -17,7 +17,7 @@ port( 	clk,reset,en : in std_logic;
 	dataOut : out std_logic_vector(n-1 downto 0));
 end component;
 component forwardingUnit is
-port(  clk : in std_logic; 
+port(  clk,stall : in std_logic; 
 	     rsrcIdEx , rdestIdEx : in std_logic_vector(2 downto 0); 
 	     -- for ALU to ALU FWD
 	     wbDestExMem: in std_logic_vector(1 downto 0); -- equal to 01 if reg  
@@ -32,10 +32,10 @@ port(  clk : in std_logic;
 	     spSignalIdEx:in std_logic; 
 	     -- JMP Forwarding 
 	     jmpDest: in std_logic_vector( 2 downto 0); 
-	     wbDestIfId: in std_logic_vector( 1 downto 0); 
-	     rdestIfId: in std_logic_vector (2 downto 0);
+	     wbDestIdEx: in std_logic_vector( 1 downto 0);
+	     memReadIdEx:in std_logic;
 	    -- Ouput
-	     aluFwdSignalForRdest:out std_logic; -- is there ALU FWD?
+	     aluFwdSignalForRdest:out std_logic; -- is there FWD?
 	     aluFwdSignalTypeForRsrc:out std_logic_vector(1 downto 0); -- 00 for ALU-ALU , 01 for Mem-ALU , 10 for SP Value 
 	     aluFwdSignalTypeForRdest:out std_logic; -- 0 for ALU-ALU , 1 for Mem-ALU
 	     jmpFWD: out std_logic_vector(1 downto 0) -- 11 for wbValue , 10 for aluResult  
@@ -165,7 +165,7 @@ begin
 	
 	IFIDBuff : stageBuffer generic map (n => 42) port map(clk,reset,stall,ifIdReset,instIn,instout);
 	  
-	---Stage 2: Decode
+	---Stage 2: Decode , Stage 5:WB
 	opCode<=instout(41 downto 37) when stall='0' and jmpSig='0' 
 	   else "11111";--flushing
 	control : controlUnit port map(clk,opCode,jmp,memValueToPass,jmpType,cntrl,ccrWb);
@@ -210,21 +210,23 @@ begin
 	HDU:hazardDetectionUnit port map(clk,toAlu(58),toAlu(3 downto 1),instout(31 downto 29),
 					 instout(28 downto 26),instout(41 downto 37),stall);
 	
-	FU:forwardingUnit port map(clk,toAlu(73 downto 71),toAlu(3 downto 1)
+	FU:forwardingUnit port map(clk,stall,toAlu(73 downto 71),toAlu(3 downto 1)
 				  ,toMem(43 downto 42),toMem(19 downto 17),toMem(40)
 				  ,toWb(24 downto 23),toWb(22 downto 20)
 				  ,toMem(38),toWb(3),toAlu(56)
-				  ,jmpDest,cntrl(10 downto 9),instout(28 downto 26)
+				  ,instout(28 downto 26),toALU(62 downto 61),toALU(58)
 	    			  ,aluFwdSignalForRdest,aluFwdSignalTypeForRsrc,aluFwdSignalTypeForRdest,jmpFWD);
-	jmpU:jmpUnit port map(clk,jmp,stall,jmpType,ccrVal(2 downto 0),jmpSig);
+	    			  
+	jmpU:jmpUnit port map(clk,jmp,stall,jmpType,ccrIn(2 downto 0),jmpSig);
 	  
   pcUnit: pcControlUnit port map (clk , 
-          toWb(34 downto 25) , toAlu(13 downto 4) , toMem(10 downto 1) ,
+          toWb(34 downto 25) , toAlu(13 downto 4) ,fromAlu(9 downto 0)  ,
           jmpFWD ,resetPc,interruptPc, jmpSig , cntrl(1) , reset , stall , 
           toWb(2) , toWb(1) , 
           instout(41 downto 37),
           pc);
-  
+          
+  -- toMem(10 downto 1) 
 	process(clk,cntrl)
 	begin
 		if toWb(24 downto 23)="10" and clk='1' then

@@ -45,7 +45,7 @@ signal e: std_logic_vector(6 downto 0);
 	else WbValue;
 	wbRdst<=rDst;
 	rDstVal<="000000"&pcValue when memValToPass="01"
-	else "000000"&std_logic_vector(unsigned(pcValue)+2) when memValToPass="10"
+	else "000000"&std_logic_vector(unsigned(pcValue)+1) when memValToPass="10"
 	else rDstValue;
 	with rDst select
 		       rDstValue<=readValue(0) when "000",
