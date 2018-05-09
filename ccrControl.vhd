@@ -33,8 +33,7 @@ Architecture ccrUnitImpl of ccrUnit is
                    when "00" => ccrRegister:=ccrRegister(3) &'0'&ccrRegister(1 downto 0);
                    when "01" => ccrRegister:=ccrRegister(3 downto 2) &'0'& ccrRegister(0);
                    when "10" => ccrRegister:=ccrRegister(3 downto 1) &'0';
-                   when "11" => ccrRegister:=ccrRegister(3) &'1'&ccrRegister(1 downto 0);
-                   when others => null ; -- doesn't compile without it 
+                   when others => ccrRegister:=ccrRegister(3) &'1'&ccrRegister(1 downto 0);
                    
                 end case; 
              elsif (ccrMode='0') then 
