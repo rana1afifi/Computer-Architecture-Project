@@ -35,7 +35,7 @@ begin
   variable pcVar: std_logic_vector(9 downto 0);
   begin 
       
-      if(rising_edge(clk)) then --recently changed from 1
+      if(clk='1') then --recently changed from 1
       
           if (jmpSignal='1')  then 
               if (fwdSignalType="11") then 

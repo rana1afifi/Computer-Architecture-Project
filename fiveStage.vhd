@@ -182,7 +182,7 @@ begin
 	IDEXBuff : stageBuffer generic map (n => 74) port map(clk,reset,'0',idExReset,idEx,toAlu);
 	  
  -----Stage 3:Execute
-	ccr:ccrUnit port map(clk,toAlu(60),toWb(0),ccrIn,toWb(38 downto 35),toAlu(66 downto 65),ccrVal);
+	ccr:ccrUnit port map(clk,toAlu(60),toWb(0),ccrIn,toWb(40 downto 37),toAlu(66 downto 65),ccrVal);
 	FromAlu<=toMem(35 downto 20) when toMem(45 downto 44)="11" --imm value
 	        else inPort when toMem(45 downto 44)="10"              --inPort
 	        else toMem(16 downto 1);                           --aluResult
@@ -235,7 +235,7 @@ begin
 		if cntrl(2)='1' or cntrl(3)='1' then
 			counter<=3;
 		
-		elsif rising_edge(clk) and counter>0 then
+		elsif clk='1' and counter>0 then
 			counter<=counter-1;
 		end if;
 	end process;
